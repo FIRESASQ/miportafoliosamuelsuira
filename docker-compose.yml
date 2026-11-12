@@ -1,0 +1,27 @@
+# Levanta el portafolio completo: docker compose up --build  →  http://localhost:9000
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "1"   # el laboratorio 5 se conecta como root sin clave (solo demo local)
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      # el portal comparte la red de este contenedor, por eso sus puertos se publican aquí
+      - "9000:9000"   # portal
+      - "8080:8080"   # Lab 8 · ReservasLabAPI
+      - "8081:8081"   # Lab 4 · Spring Boot
+      - "8082:8082"   # Lab 5 · Tomcat
+      - "3000:3000"   # Lab 7 · ReservaFE
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 20
+
+  portafolio:
+    build: .
+    # misma red que la base de datos: los laboratorios usan localhost:3306 sin cambiar su código
+    network_mode: "service:db"
+    depends_on:
+      db:
+        condition: service_healthy

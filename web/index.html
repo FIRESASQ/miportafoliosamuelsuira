@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Portafolio de Samuel Suira — Programación V · UNACHI 2026-II. Los programas del semestre, que se pueden abrir y probar de verdad.">
+  <meta name="theme-color" content="#04121f">
+  <title>Samuel Suira · Programación V</title>
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="loader" id="loader">
+    <div class="loader-tank">
+      <div class="loader-water" id="loaderWater">
+        <svg viewBox="0 0 240 20" preserveAspectRatio="none"><path d="M0 10 Q 30 0 60 10 T 120 10 T 180 10 T 240 10 V 20 H 0 Z"/></svg>
+      </div>
+      <div class="loader-text">
+        <span>Sumergiéndonos</span>
+        <b><span id="loaderNum">0</span>%</b>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="oceano" aria-hidden="true"></canvas>
+  <div class="velo" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <a href="#inicio" class="brand"><span class="logo">SS</span><span>Samuel <em>Suira</em></span></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#inicio" class="active">Inicio</a>
+      <a href="#sobre">Sobre mí</a>
+      <a href="#aplicaciones">Aplicaciones</a>
+      <a href="#codigos">Códigos fuente</a>
+    </nav>
+    <div class="nav-status">
+      <span class="pill" id="modoPill" title="Estado del portal local"><i class="dot"></i><span>…</span></span>
+      <button class="pill pill-btn" id="termToggle" title="Terminal"><span class="ico">&gt;_</span><span id="termCount">0</span></button>
+      <button class="pill pill-btn" id="sonido" title="Encender el sonido del mar">🔇 Sonido</button>
+      <button class="pill pill-btn" id="pausa" title="Pausar o reanudar las animaciones del mar">❚❚</button>
+    </div>
+    <button class="burger" id="burger" aria-label="Menú"><span></span><span></span></button>
+  </header>
+
+  <!-- Profundímetro -->
+  <aside class="profundidad" id="profundidad" aria-hidden="true">
+    <div class="pf-escala"><i id="pfMarca"></i></div>
+    <div class="pf-dato"><b id="pfMetros">0 m</b><span id="pfZona">Superficie</span></div>
+  </aside>
+
+  <main>
+    <!-- ===================== INICIO ===================== -->
+    <section class="hero" id="inicio">
+      <p class="eyebrow">Portafolio · Programación V · 2026</p>
+      <h1 class="hero-title" aria-label="Samuel Suira">
+        <span class="flota"><span class="liquido">SAMUEL</span></span>
+        <span class="flota retraso"><span class="liquido">SUIRA</span></span>
+      </h1>
+      <p class="hero-sub">Estudiante de programación · <span class="serif">Programación V</span></p>
+      <p class="hero-text">Aquí están los programas de los laboratorios del semestre. No son fotos: cuando pulsas <span class="kbd">▶ Ejecutar</span>, <strong>el programa se abre y funciona de verdad</strong>.</p>
+      <div class="hero-cta">
+        <a href="#sobre" class="btn btn-primary" id="sumergirse">Sumergirse <span class="flecha">↓</span></a>
+        <a href="#aplicaciones" class="btn btn-ghost">Ver aplicaciones</a>
+      </div>
+    </section>
+
+    <!-- ===================== SOBRE MÍ ===================== -->
+    <section class="section" id="sobre">
+      <div class="section-head reveal">
+        <h2 class="titulo-ola">Sobre <span class="serif">mí</span></h2>
+      </div>
+      <div class="about">
+        <article class="card profile reveal">
+          <div class="profile-top">
+            <span class="avatar">SS</span>
+            <div>
+              <h3>Samuel Suira</h3>
+              <p class="muted">Estudiante · Universidad Autónoma de Chiriquí</p>
+            </div>
+          </div>
+          <p>Estudio en la Universidad Autónoma de Chiriquí. En el curso Programación V aprendí a crear programas más completos: páginas web que guardan información, programas que se comunican entre sí por internet y programas que hacen varias tareas al mismo tiempo. Todo lo escribí en el lenguaje de programación Java.</p>
+          <ul class="facts">
+            <li><span class="fi">◈</span>Universidad Autónoma de Chiriquí</li>
+            <li><span class="fi">◈</span>Programación V · 2026-II</li>
+            <li><span class="fi">◈</span>Páginas web, comunicación entre programas y tareas simultáneas</li>
+            <li><span class="fi">◈</span>Chiriquí, Panamá</li>
+          </ul>
+        </article>
+      </div>
+      <div class="stats reveal">
+        <div class="stat"><b data-count="6">0</b><span>laboratorios con código</span></div>
+        <div class="stat"><b id="statApps">0</b><span>programas que puedes probar</span></div>
+        <div class="stat"><b id="statArchivos">0</b><span>archivos de código</span></div>
+        <div class="stat"><b id="statLineas">0</b><span>líneas de código</span></div>
+      </div>
+    </section>
+
+    <!-- ===================== APLICACIONES ===================== -->
+    <section class="section" id="aplicaciones">
+      <div class="section-head reveal">
+        <span class="num">02 · Aplicaciones</span>
+        <h2 class="titulo-ola">Aplicaciones <span class="serif">en ejecución</span></h2>
+        <p>Los ocho laboratorios del semestre, uno por uno. Sigue bajando para recorrerlos. Pulsa <b>▶</b> y el programa se abre en esta computadora.</p>
+      </div>
+
+      <div class="modo card reveal" id="modoBanner"></div>
+
+      <div class="diapos" id="diapos" aria-label="Laboratorios del semestre">
+        <h3 class="subtitulo reveal">Ir directo a un laboratorio</h3>
+        <nav class="diapo-puntos reveal" id="diapoPuntos" aria-label="Ir a un laboratorio"></nav>
+        <div class="diapo-pista" id="diapoPista"></div>
+      </div>
+    </section>
+
+    <!-- ===================== CÓDIGOS FUENTE ===================== -->
+    <section class="section" id="codigos">
+      <div class="section-head reveal">
+        <span class="num">03 · Códigos fuente</span>
+        <h2 class="titulo-ola">Códigos <span class="serif">fuente</span></h2>
+        <p id="vaultResumen">El código de todos los programas. Puedes leerlo, copiarlo o ejecutarlo.</p>
+      </div>
+      <div class="vault reveal" id="vault">
+        <aside class="vault-side">
+          <input type="search" id="vaultSearch" placeholder="Buscar archivo…" autocomplete="off">
+          <div class="vault-filters" id="vaultFilters"></div>
+          <div class="vault-tree" id="vaultTree"></div>
+        </aside>
+        <div class="vault-main">
+          <div class="vault-bar">
+            <div class="vault-title"><b id="vaultFile">Selecciona un archivo</b><span id="vaultMeta" class="muted"></span></div>
+            <div class="vault-actions">
+              <button class="mini" id="vaultRun" hidden>▶ Ejecutar</button>
+              <button class="mini" id="vaultCopy">Copiar</button>
+            </div>
+          </div>
+          <pre class="code" id="vaultCode"><code>// Elige un archivo de la izquierda para ver su código.</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="fondo-mar" id="fondo">
+    <div class="arena" aria-hidden="true"></div>
+    <div class="michis">
+      <div class="michi-zona"><canvas id="michi" width="200" height="200" aria-label="Un gatito dibujado bailando"></canvas><span class="michi-sombra"></span></div>
+      <div class="michi-zona grande"><canvas id="michi2" width="256" height="256" aria-label="Un gatito bailando"></canvas><span class="michi-sombra"></span></div>
+    </div>
+    <p class="fondo-metros">Llegaste al fondo · <b>10 994 m</b></p>
+    <p><b>Samuel Suira</b> · Programación V · Universidad Autónoma de Chiriquí · 2026-II</p>
+    <button class="btn btn-ghost" id="subir">Volver a la superficie ↑</button>
+  </footer>
+
+  <!-- ===================== TERMINAL ===================== -->
+  <aside class="term" id="term" aria-label="Terminal">
+    <div class="term-head">
+      <div class="term-tabs" id="termTabs"></div>
+      <div class="term-tools">
+        <button class="mini" id="termClear" title="Limpiar la vista">Limpiar</button>
+        <button class="mini" id="termMax" title="Agrandar">⤢</button>
+        <button class="mini" id="termClose" title="Cerrar">✕</button>
+      </div>
+    </div>
+    <div class="term-info" id="termInfo"></div>
+    <pre class="term-out" id="termOut"></pre>
+    <form class="term-in" id="termIn">
+      <span>›</span><input id="termInput" placeholder="Escribe aquí para responderle al programa y pulsa Enter" autocomplete="off">
+      <button class="mini" type="submit">Enviar</button>
+    </form>
+  </aside>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="data.js"></script>
+  <script src="fuentes.js"></script>
+  <script src="grabaciones.js"></script>
+  <script src="oceano.js"></script>
+  <script src="sonido.js"></script>
+  <script src="michi.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
