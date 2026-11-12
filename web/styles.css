@@ -43,16 +43,6 @@ button { font-family: inherit; cursor: pointer; }
 .velo { position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.35), transparent 60%); }
 
-/* ---------- carga ---------- */
-.loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #031725; transition: opacity .8s, visibility .8s; }
-.loader.done { opacity: 0; visibility: hidden; }
-.loader-tank { position: relative; width: 240px; height: 240px; border-radius: 50%; overflow: hidden; border: 1px solid var(--line-2); box-shadow: 0 0 60px rgba(79, 240, 255, .15), inset 0 0 40px rgba(79,240,255,.08); }
-.loader-water { position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background: linear-gradient(#22d3c5, #0b5d8a); transition: height .15s; }
-.loader-water svg { position: absolute; top: -18px; left: 0; width: 200%; height: 20px; fill: #22d3c5; animation: olaLoader 1.6s linear infinite; }
-@keyframes olaLoader { to { transform: translateX(-50%); } }
-.loader-text { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; mix-blend-mode: difference; color: #fff; }
-.loader-text span { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; }
-.loader-text b { font-size: 52px; font-weight: 800; line-height: 1; }
 
 /* ---------- navegación ---------- */
 .nav {
@@ -402,3 +392,21 @@ select:focus, .field:focus, input:focus, textarea:focus { outline: 1px solid var
 .michi-zona.grande { width: 230px; height: 230px; margin-bottom: -18px; }
 
 #sonido.on { border-color: var(--aqua); color: #fff; box-shadow: 0 0 14px rgba(79, 240, 255, .35); }
+
+/* ---------- entrada a la página ---------- */
+/* El mar aparece de a poco, la barra baja, el nombre sube como saliendo del agua y luego entra el resto */
+#oceano { animation: aparecerMar 1.8s ease-out both; }
+@keyframes aparecerMar { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+.nav { animation: bajarNav .9s .3s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes bajarNav { from { opacity: 0; transform: translate(-50%, -30px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.hero .eyebrow { animation: entrarArriba .9s .5s cubic-bezier(.2,.8,.2,1) both; }
+.hero-title .liquido { animation: emerger 1.3s .65s cubic-bezier(.2,.9,.25,1) both; }
+.hero-title .retraso .liquido { animation-delay: .85s; }
+.hero-sub { animation: entrarAbajo .9s 1.25s cubic-bezier(.2,.8,.2,1) both; }
+.hero-text { animation: entrarAbajo .9s 1.4s cubic-bezier(.2,.8,.2,1) both; }
+.hero-cta { animation: entrarAbajo .9s 1.55s cubic-bezier(.2,.8,.2,1) both; }
+.profundidad { animation: entrarLado 1s 1.6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes emerger { from { opacity: 0; transform: translateY(55%) scaleY(.85); filter: blur(10px); } 60% { opacity: 1; filter: blur(0); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes entrarArriba { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+@keyframes entrarAbajo { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes entrarLado { from { opacity: 0; transform: translate(30px, -50%); } to { opacity: 1; transform: translate(0, -50%); } }

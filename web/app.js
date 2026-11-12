@@ -53,20 +53,8 @@
   }
 
   // ------------------------------------------------------------------
-  //  Carga, navegación y animaciones de entrada
+  //  Navegación y animaciones de entrada
   // ------------------------------------------------------------------
-  function cargar() {
-    let n = 0;
-    const tick = () => {
-      n = Math.min(100, n + Math.ceil((100 - n) / 8));
-      $('#loaderNum').textContent = n;
-      $('#loaderWater').style.height = n + '%';
-      if (n < 100) setTimeout(tick, 45);
-      else setTimeout(() => $('#loader').classList.add('done'), 350);
-    };
-    tick();
-  }
-
   function separarLetras() {
     $$('.titulo-ola').forEach((h) => {
       let i = 0;
@@ -745,7 +733,6 @@ docker compose up --build
   // ------------------------------------------------------------------
   //  Inicio
   // ------------------------------------------------------------------
-  cargar();
   separarLetras();
   pintarDiapositivas();
   $('#statApps').dataset.count = Object.keys(D.apps).length + Object.keys(D.programas).length;
