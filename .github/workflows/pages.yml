@@ -1,4 +1,4 @@
-# Publica la versión web (modo demostración) en GitHub Pages en cada push a main.
+# Publica la página en GitHub Pages en cada push a main (los programas corren en el navegador).
 name: Publicar en GitHub Pages
 
 on:

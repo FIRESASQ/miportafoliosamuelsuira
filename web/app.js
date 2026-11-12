@@ -1,15 +1,16 @@
-// Lógica del portafolio: modo en vivo (portal Java) o demostración (GitHub Pages),
-// aplicaciones, terminal y códigos fuente.
+// Lógica del portafolio: aplicaciones, terminal y códigos fuente.
+// Si el portal Java está encendido, los programas corren en Java; si no (GitHub Pages, celulares),
+// corren dentro del navegador con navegador.js, que responde a las mismas rutas.
 (() => {
   const D = window.PORTAFOLIO;
-  const G = window.GRABACIONES || { programas: {}, api: {} };
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
   let estado = null;        // último api/estado
-  let enLinea = false;      // ¿responde el portal local?
+  let enLinea = false;      // ¿hay quién ejecute los programas? (portal Java o navegador)
+  let navegador = false;    // true: los programas corren dentro del navegador
   let comprobado = false;   // ya se intentó contactar al portal
   const iniciando = new Set();
   const nombreDe = (id) => D.apps[id]?.titulo || D.programas[id]?.titulo || id;
@@ -18,15 +19,17 @@
   // ------------------------------------------------------------------
   //  Comunicación con el portal
   // ------------------------------------------------------------------
+  const pedir = (url, opciones) => (navegador ? window.NAVEGADOR.fetch(url, opciones) : fetch(url, opciones));
+
   async function get(url) {
-    const r = await fetch(url, { cache: 'no-store' });
+    const r = await pedir(url, { cache: 'no-store' });
     const t = await r.text();
     const j = t ? JSON.parse(t) : {};
     if (!r.ok) throw new Error(j.error || r.statusText);
     return j;
   }
   async function post(url, body = '') {
-    const r = await fetch(url, { method: 'POST', headers: { 'X-Portal': '1', 'Content-Type': 'text/plain; charset=utf-8' }, body });
+    const r = await pedir(url, { method: 'POST', headers: { 'X-Portal': '1', 'Content-Type': 'text/plain; charset=utf-8' }, body });
     const t = await r.text();
     const j = t ? JSON.parse(t) : {};
     if (!r.ok) throw new Error(j.error || r.statusText);
@@ -40,16 +43,6 @@
     el.classList.add('show');
     clearTimeout(toast.t);
     toast.t = setTimeout(() => el.classList.remove('show'), error ? 6000 : 3200);
-  }
-
-  function urlRepositorio() {
-    const h = location.hostname;
-    if (h.endsWith('.github.io')) {
-      const usuario = h.split('.')[0];
-      const repo = location.pathname.split('/').filter(Boolean)[0] || `${usuario}.github.io`;
-      return `https://github.com/${usuario}/${repo}`;
-    }
-    return 'https://github.com/FIRESASQ/miportafoliosamuelsuira';
   }
 
   // ------------------------------------------------------------------
@@ -135,27 +128,18 @@
   }
 
   // ------------------------------------------------------------------
-  //  Banner del modo (en vivo / demostración)
+  //  Indicador del modo (Java o navegador)
   // ------------------------------------------------------------------
   function pintarModo() {
-    const pill = $('#modoPill');
-    if (enLinea) {
-      pill.innerHTML = '<i class="dot on"></i><span>En vivo</span>';
-      $('#modoBanner').innerHTML = `<span class="ico-modo">⚡</span><div>
-        <h4>Todo funciona en vivo</h4>
-        <p>Cada botón ▶ abre el programa de verdad en esta computadora. La primera vez tarda un poco más porque el programa se prepara antes de abrirse.</p></div>`;
-    } else {
-      const repo = urlRepositorio();
-      pill.innerHTML = '<i class="dot demo"></i><span>Demostración</span>';
-      $('#modoBanner').innerHTML = `<span class="ico-modo">🌊</span><div>
-        <h4>Estás viendo la versión de internet</h4>
-        <p>En esta versión los programas muestran <b class="grabada">resultados reales que se grabaron</b> cuando se ejecutaron. Para abrirlos de verdad, descarga el proyecto en tu computadora con estos comandos:</p>
-        <pre><span class="c"># necesitas tener instalado Docker Desktop</span>
-git clone ${esc(repo)}.git
-cd ${esc(repo.split('/').pop())}
-docker compose up --build
-<span class="c"># luego abre http://localhost:9000 en tu navegador</span></pre></div>`;
-    }
+    $('#modoPill').innerHTML = navegador
+      ? '<i class="dot on"></i><span>En el navegador</span>'
+      : '<i class="dot on"></i><span>En vivo</span>';
+    $('#modoPill').title = navegador
+      ? 'Los programas funcionan dentro de este navegador, en una versión traducida del programa original'
+      : 'Los programas funcionan en Java en esta computadora';
+    $('#notaModo').textContent = navegador
+      ? 'En internet, cada programa funciona dentro de tu navegador, en una versión traducida del programa original.'
+      : '';
   }
 
   // ------------------------------------------------------------------
@@ -202,10 +186,14 @@ docker compose up --build
     $('[data-toggle]', card).onclick = () => (appDe(id)?.corriendo ? detenerApp(id) : iniciarApp(id));
     $('[data-consola]', card).onclick = () => abrirTab(id, true);
     $('[data-pestana]', card).onclick = () => {
-      if (!enLinea) return toast('En la versión de internet esta página no está encendida. Descarga el proyecto para abrirla.', true);
+      if (navegador) return toast('En la versión de internet esta página funciona aquí mismo, dentro de la tarjeta.');
       open(URLS[id], '_blank');
     };
-    $('[data-recargar]', card)?.addEventListener('click', () => { const f = $('iframe', card); if (f) f.src = f.src; });
+    $('[data-recargar]', card)?.addEventListener('click', () => {
+      if (card.web) return card.web.recargar();
+      const f = $('iframe', card);
+      if (f) f.src = f.src;
+    });
   }
 
   function actualizarApps() {
@@ -214,50 +202,44 @@ docker compose up --build
       if (!card) return;
       const a = D.apps[id];
       const s = appDe(id) || {};
-      const demo = comprobado && !enLinea;
       const cargando = iniciando.has(id) || (s.corriendo && !s.listo);
       const fase = { 'base de datos': 'preparando los datos…', compilando: 'preparando el programa…', ejecutando: 'abriendo…', preparando: 'preparando…' }[s.fase] || 'abriendo…';
-      const txt = demo ? (a.vista === 'api' ? 'resultados grabados' : 'solo en tu computadora')
-        : iniciando.has(id) ? 'encendiendo…' : s.corriendo ? (s.listo ? 'encendida' : fase) : 'apagada';
-      $('.dot', card).className = 'dot ' + (s.listo ? 'on' : cargando ? 'warn' : demo ? 'demo' : '');
+      const txt = iniciando.has(id) ? 'encendiendo…' : s.corriendo ? (s.listo ? 'encendida' : fase) : 'apagada';
+      $('.dot', card).className = 'dot ' + (s.listo ? 'on' : cargando ? 'warn' : '');
       $('.st-txt', card).textContent = txt;
       card.classList.toggle('live', !!s.listo);
       const btn = $('[data-toggle]', card);
       btn.disabled = iniciando.has(id);
       btn.classList.toggle('stop', !!s.corriendo);
-      btn.textContent = demo ? (a.vista === 'api' ? '▶ Probar' : '▶ Cómo abrirla') : iniciando.has(id) ? 'Encendiendo…' : s.corriendo ? '■ Apagar' : '▶ Encender';
+      btn.textContent = iniciando.has(id) ? 'Encendiendo…' : s.corriendo ? '■ Apagar' : '▶ Encender';
       const sel = $('[data-opcion]', card);
-      if (sel) sel.disabled = !!s.corriendo || demo;
+      if (sel) sel.disabled = !!s.corriendo;
 
       const screen = $('.screen', card);
-      const modo = demo ? (a.vista === 'api' && card.dataset.demoApi ? 'demo-api' : 'demo') : s.listo ? 'listo' : cargando ? 'cargando' : 'apagado';
+      const modo = s.listo ? 'listo' : cargando ? 'cargando' : 'apagado';
       if (screen.dataset.modo === modo) return;
       screen.dataset.modo = modo;
-      screen.classList.toggle('api-mode', modo === 'demo-api' || (modo === 'listo' && a.vista === 'api'));
+      screen.classList.toggle('api-mode', modo === 'listo' && a.vista === 'api');
+      card.web = null;
       if (modo === 'apagado') {
         screen.innerHTML = `<div class="placeholder"><span class="big">⏻</span>Está apagada.<br>Pulsa <b>▶ Encender</b> para abrirla.</div>`;
       } else if (modo === 'cargando') {
         screen.innerHTML = `<div class="placeholder"><div class="sonar"></div>Abriendo…<br><small>La primera vez puede tardar un minuto.</small></div>`;
-      } else if (modo === 'demo') {
-        screen.innerHTML = a.vista === 'iframe'
-          ? `<div class="placeholder"><span class="big">🐋</span>Esta página guarda información en una base de datos, por eso solo se puede abrir en tu computadora.<br><small>Mira arriba cómo descargar el proyecto.</small></div>`
-          : `<div class="placeholder"><span class="big">⇄</span>Pulsa <b>▶ Probar</b> para ver cómo respondió este programa.</div>`;
+      } else if (a.vista === 'iframe' && navegador) {
+        // la página se dibuja dentro del marco y la barra muestra la dirección en la que está
+        screen.innerHTML = `<iframe title="${esc(a.titulo)}"></iframe>`;
+        card.web = window.NAVEGADOR.montarWeb(id, $('iframe', screen), (url) => { $('.url', card).textContent = url; });
       } else if (a.vista === 'iframe') {
         screen.innerHTML = `<iframe src="${esc(URLS[id])}" title="${esc(a.titulo)}" loading="lazy"></iframe>`;
       } else {
-        screen.innerHTML = probadorApi(id, modo === 'demo-api');
-        conectarProbador(id, screen, modo === 'demo-api');
+        screen.innerHTML = probadorApi(id);
+        conectarProbador(id, screen);
       }
+      if (modo !== 'listo') $('.url', card).textContent = URLS[id];
     });
   }
 
   async function iniciarApp(id) {
-    if (comprobado && !enLinea) {
-      const card = $('#app-' + id);
-      if (D.apps[id].vista === 'api') { card.dataset.demoApi = '1'; actualizarApps(); }
-      else { $('#modoBanner').scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Descarga el proyecto en tu computadora para abrir esta página.'); }
-      return;
-    }
     if (iniciando.has(id)) return;
     const sel = $(`#app-${id} [data-opcion]`);
     iniciando.add(id);
@@ -283,7 +265,7 @@ docker compose up --build
   }
 
   // ---------- probador de los servicios ----------
-  function probadorApi(id, demo) {
+  function probadorApi(id) {
     const a = D.apps[id];
     return `<div class="api">
       <div class="api-presets">${a.peticiones.map((p, i) => `<button data-preset="${i}">${esc(p.t)}</button>`).join('')}</div>
@@ -295,53 +277,37 @@ docker compose up --build
         <button class="run" type="submit">Enviar</button>
         <textarea name="b" placeholder="Cuerpo JSON (para POST / PUT)" spellcheck="false"></textarea>
       </form></details>
-      <pre class="api-res">${demo ? 'Elige un botón de arriba para ver la respuesta que se grabó.' : 'Elige un botón de arriba para enviarle un pedido al programa.'}</pre>
+      <pre class="api-res">Elige un botón de arriba para enviarle un pedido al programa.</pre>
     </div>`;
   }
 
-  function mostrarRespuesta(res, status, texto, ms, m, ruta, grabada) {
+  function mostrarRespuesta(res, status, texto, ms) {
     let cuerpo = texto;
     try { cuerpo = JSON.stringify(JSON.parse(texto), null, 2); } catch { /* no es JSON */ }
     const cls = status < 300 ? 'ok' : status < 500 ? 'wrn' : 'err';
     const motivo = { 200: 'Listo', 201: 'Aceptado: se creó', 204: 'Listo: se canceló', 400: 'Rechazado: faltan datos', 401: 'Rechazado: falta la clave de acceso', 404: 'No existe', 409: 'Rechazado: choca con otra reserva', 502: 'El programa no responde' }[status] || `Respuesta ${status}`;
-    res.innerHTML = `<span class="st ${cls}">${motivo}</span>  <span class="muted">respondió en ${ms ?? '?'} milisegundos</span>${grabada ? '  <span class="grabada">· grabado</span>' : ''}\n\n${esc(cuerpo || '(sin datos)')}`;
+    res.innerHTML = `<span class="st ${cls}">${motivo}</span>  <span class="muted">respondió en ${ms ?? '?'} milisegundos</span>\n\n${esc(cuerpo || '(sin datos)')}`;
   }
 
-  function conectarProbador(id, screen, demo) {
+  function conectarProbador(id, screen) {
     const a = D.apps[id];
     const form = $('form', screen);
     const res = $('.api-res', screen);
-    let preset = null;
     $$('[data-preset]', screen).forEach((b) => b.onclick = () => {
-      preset = +b.dataset.preset;
-      const p = a.peticiones[preset];
+      const p = a.peticiones[+b.dataset.preset];
       form.m.value = p.m; form.p.value = p.p; form.b.value = p.b || '';
       form.requestSubmit();
     });
-    form.oninput = () => { preset = null; };
     form.onsubmit = async (ev) => {
       ev.preventDefault();
       const m = form.m.value;
       const ruta = form.p.value.startsWith('/') ? form.p.value : '/' + form.p.value;
-      if (demo) {
-        const g = preset != null ? G.api[id]?.[a.peticiones[preset].g ?? preset] : null;
-        if (a.apiKey && !$('[data-clave]', screen).checked && m !== 'GET') {
-          return mostrarRespuesta(res, 401, '{"error":401,"mensaje":"Falta o es inválido el encabezado X-API-KEY"}', 1, m, ruta, true);
-        }
-        if (!g) {
-          res.innerHTML = '<span class="grabada">En la versión de internet solo están las respuestas grabadas de los botones de arriba.</span>\nDescarga el proyecto para enviar tus propios pedidos.';
-          return;
-        }
-        res.innerHTML = '<span class="muted">enviando…</span>';
-        await espera(Math.min(700, 120 + g.ms));
-        return mostrarRespuesta(res, g.status, g.cuerpo, g.ms, m, ruta, true);
-      }
       const headers = { 'X-Portal': '1', 'Content-Type': 'application/json' };
       if (a.apiKey && $('[data-clave]', screen).checked) headers['X-API-KEY'] = a.apiKey;
       res.innerHTML = `<span class="muted">${m} ${esc(ruta)} …</span>`;
       try {
-        const r = await fetch(`proxy/${PUERTOS[id]}${ruta}`, { method: m, headers, body: m === 'GET' || m === 'DELETE' ? undefined : form.b.value });
-        mostrarRespuesta(res, r.status, await r.text(), r.headers.get('X-Tiempo-Ms'), m, ruta, false);
+        const r = await pedir(`proxy/${PUERTOS[id]}${ruta}`, { method: m, headers, body: m === 'GET' || m === 'DELETE' ? undefined : form.b.value });
+        mostrarRespuesta(res, r.status, await r.text(), r.headers.get('X-Tiempo-Ms'));
       } catch (e) {
         res.innerHTML = `<span class="err">${esc(e.message)}</span>`;
       }
@@ -439,29 +405,25 @@ docker compose up --build
   }
 
   function actualizarProgramas() {
-    const demo = comprobado && !enLinea;
-    Object.entries(D.programas).forEach(([id, p]) => {
+    Object.entries(D.programas).forEach(([id]) => {
       const card = $('#prog-' + id);
       if (!card) return;
       const s = appDe(id);
-      const corre = s?.corriendo || reproduciendo.has(id);
+      const corre = !!s?.corriendo;
       const btn = $('[data-run]', card);
       btn.classList.toggle('stop', !!corre);
-      btn.textContent = corre ? '■ Detener' : demo ? '▶ Ver ejecución' : '▶ Ejecutar';
-      $$('[data-arg]', card).forEach((i) => { i.disabled = demo; });
+      btn.textContent = corre ? '■ Detener' : '▶ Ejecutar';
     });
     $$('[data-need-de]').forEach((need) => {
       const req = need.dataset.needDe;
       const listo = appDe(req)?.listo;
-      need.classList.toggle('ok', !!listo || demo);
-      need.textContent = demo ? `Resultados grabados con «${nombreDe(req)}» encendido`
-        : listo ? `✓ «${nombreDe(req)}» está encendido` : `Necesitan «${nombreDe(req)}» (se enciende solo)`;
+      need.classList.toggle('ok', !!listo);
+      need.textContent = listo ? `✓ «${nombreDe(req)}» está encendido` : `Necesitan «${nombreDe(req)}» (se enciende solo)`;
     });
   }
 
   async function ejecutarPrograma(id) {
     const p = D.programas[id];
-    if (comprobado && !enLinea) return reproducir(id);
     const s = appDe(id);
     if (s?.corriendo) { await detenerApp(id); return; }
     if (p.requiere && !appDe(p.requiere)?.listo) {
@@ -477,31 +439,6 @@ docker compose up --build
       if (p.interactivo) setTimeout(() => $('#termInput').focus(), 300);
     } catch (e) { toast(e.message, true); }
     actualizarTodo();
-  }
-
-  // Modo demostración: reproduce la salida grabada como si se estuviera ejecutando
-  const reproduciendo = new Set();
-  async function reproducir(id) {
-    if (reproduciendo.has(id)) { reproduciendo.delete(id); return; }
-    const texto = G.programas[id];
-    if (!texto) return toast('No hay grabación para este programa.', true);
-    abrirTab(id, true);
-    const t = tabs.get(id);
-    t.texto = `<grabada>[resultado real grabado · en la versión de internet los programas no se ejecutan]</grabada>\n\n`;
-    reproduciendo.add(id);
-    actualizarProgramas();
-    pintarSalida();
-    const lineas = texto.split('\n');
-    for (const l of lineas) {
-      if (!reproduciendo.has(id)) { t.texto += '\n[detenido]\n'; break; }
-      t.texto += l + '\n';
-      if (tabActiva === id) pintarSalida();
-      await espera(l.trim() ? 28 + Math.random() * 40 : 10);
-    }
-    if (reproduciendo.has(id)) t.texto += '\n[proceso terminado · código de salida 0]\n';
-    reproduciendo.delete(id);
-    if (tabActiva === id) pintarSalida();
-    actualizarProgramas();
   }
 
   // ------------------------------------------------------------------
@@ -522,10 +459,10 @@ docker compose up --build
   function pintarTabs() {
     $('#termTabs').innerHTML = [...tabs.keys()].map((id) => {
       const s = appDe(id) || {};
-      const vivo = s.corriendo || reproduciendo.has(id);
+      const vivo = !!s.corriendo;
       return `<button class="term-tab ${id === tabActiva ? 'on' : ''}" data-tab="${id}"><i class="dot ${vivo ? 'on' : ''}"></i>${esc(nombreDe(id))}<span class="x" data-cerrar="${id}">✕</span></button>`;
     }).join('') || '<span class="muted" style="font-size:12px;padding:6px">Sin procesos. Ejecuta un programa para ver su salida aquí.</span>';
-    $('#termCount').textContent = Object.values(estado?.apps || {}).filter((a) => a.corriendo).length + reproduciendo.size;
+    $('#termCount').textContent = Object.values(estado?.apps || {}).filter((a) => a.corriendo).length;
     $$('[data-tab]').forEach((b) => b.onclick = (e) => {
       const cerrar = e.target.dataset.cerrar;
       if (cerrar) { tabs.delete(cerrar); if (tabActiva === cerrar) tabActiva = tabs.keys().next().value || null; }
@@ -539,10 +476,6 @@ docker compose up --build
     const info = $('#termInfo');
     if (!tabActiva) { info.innerHTML = ''; return; }
     const s = appDe(tabActiva) || {};
-    if (!enLinea) {
-      info.innerHTML = `<span>${esc(nombreDe(tabActiva))}</span><span class="grabada">resultado grabado</span>`;
-      return;
-    }
     const durac = s.inicio ? Math.round((Date.now() - s.inicio) / 1000) + ' s' : '—';
     info.innerHTML = `<span>${esc(nombreDe(tabActiva))}</span>
       <span>${s.corriendo ? `<span class="ok">● ${esc(s.fase || 'en ejecución')}</span>` : s.codigo != null ? `terminado · código ${s.codigo}` : 'detenido'}</span>
@@ -554,8 +487,7 @@ docker compose up --build
 
   function colorear(texto) {
     return esc(texto).split('\n').map((l) => l.startsWith('$ ') ? `<span class="cmd">${l}</span>`
-      : /^\[(proceso|detenido|error|aviso)/.test(l) ? `<span class="sys">${l}</span>`
-      : l.replace(/&lt;grabada&gt;(.*)&lt;\/grabada&gt;/, '<span class="grabada">$1</span>')).join('\n');
+      : /^\[(proceso|detenido|error|aviso)/.test(l) ? `<span class="sys">${l}</span>` : l).join('\n');
   }
 
   function pintarSalida() {
@@ -591,7 +523,6 @@ docker compose up --build
       e.preventDefault();
       const inp = $('#termInput');
       if (!tabActiva) return;
-      if (!enLinea) return toast('En la versión de internet no se puede escribir a los programas. Descarga el proyecto para usarlos.', true);
       try {
         await post(`api/apps/${tabActiva}/entrada`, inp.value);
         inp.value = '';
@@ -649,7 +580,7 @@ docker compose up --build
   async function leerArchivo(ruta) {
     const local = window.FUENTES?.find((f) => f.ruta === ruta);
     if (enLinea) {
-      const r = await fetch('api/archivo?ruta=' + encodeURIComponent(ruta));
+      const r = await pedir('api/archivo?ruta=' + encodeURIComponent(ruta));
       if (r.ok) return r.text();
     }
     if (local) return local.codigo;
@@ -716,7 +647,11 @@ docker compose up --build
       estado = await get('api/estado');
       enLinea = true;
     } catch {
-      enLinea = false;
+      if (!navegador && window.NAVEGADOR) {
+        navegador = true;
+        estado = await get('api/estado');
+        enLinea = true;
+      } else enLinea = false;
     }
     const primera = !comprobado;
     comprobado = true;
@@ -741,5 +676,5 @@ docker compose up --build
   codigos();
   addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#term').classList.remove('max'); });
   setTimeout(() => { revelar(); $$('[data-count]').forEach((el) => contar(el, +el.dataset.count)); }, 500);
-  refrescar().then(() => setInterval(() => { if (enLinea || !location.hostname.endsWith('github.io')) refrescar(); }, 1500));
+  refrescar().then(() => setInterval(refrescar, navegador ? 600 : 1500));
 })();

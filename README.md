@@ -19,10 +19,10 @@ Portafolio del curso **Programación V** (Universidad Autónoma de Chiriquí, 20
 
 ## Cómo probarlo
 
-### 1. Ver la versión web (sin instalar nada)
-La página se publica en **GitHub Pages**. En esa versión los programas muestran **salidas reales grabadas** y las APIs, respuestas grabadas. Quedan marcadas como tales.
+### 1. Probarlo en internet (sin instalar nada, también desde el celular)
+Abre **https://firesasq.github.io/miportafoliosamuelsuira/**. Ahí los 13 programas funcionan dentro del navegador: cada uno está traducido a JavaScript desde su código Java original, con las mismas reglas y los mismos textos. Los datos de las páginas de estudiantes e inventario se guardan en el navegador de quien las usa.
 
-### 2. Ejecutar todo en vivo con Docker (recomendado)
+### 2. Ejecutar el Java original con Docker
 Solo hace falta [Docker Desktop](https://www.docker.com/products/docker-desktop/):
 
 ```bash
@@ -67,7 +67,9 @@ web/                 La página: HTML, CSS y JavaScript sin frameworks.
   oceano.js          El mar: shader WebGL propio (cielo, olas, cruce de la superficie, rayos de luz,
                      cáusticas y oscuridad de las profundidades) controlado por el scroll.
   fuentes.js         Código fuente exportado para la versión web (java portal/Portal.java --exportar).
-  grabaciones.js     Salidas reales de los programas y de las APIs para el modo demostración.
+  navegador.js       Los programas traducidos a JavaScript para que funcionen en el navegador cuando el
+                     portal Java no está encendido (GitHub Pages, celulares). Responde a las mismas rutas
+                     que el portal, así el resto de la página funciona igual.
   docs/              Los documentos en PDF de los laboratorios 3 y 6.
 labs/                Código de los laboratorios (proyectos Maven).
 db/init.sql          Bases de datos de los labs 4 y 5 (se puede ejecutar varias veces).
