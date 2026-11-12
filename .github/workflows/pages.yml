@@ -29,6 +29,8 @@ jobs:
           java-version: '21'
       - name: Exportar el código fuente para la versión estática
         run: java portal/Portal.java --exportar
+      - name: Poner la versión en los archivos (para que el navegador no use copias viejas)
+        run: sed -i "s/__VERSION__/${GITHUB_SHA::7}/g" web/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
