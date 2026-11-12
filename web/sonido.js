@@ -47,7 +47,7 @@
 
     // Olas: dos capas de ruido filtrado, una por lado, que suben y bajan lentamente
     olasGain = ac.createGain();
-    olasGain.gain.value = 0.24;
+    olasGain.gain.value = 0.55;
     olasGain.connect(filtroAgua);
     const base = ruido(4);
     [-0.6, 0.6].forEach((lado, k) => {
@@ -176,7 +176,7 @@
     // Sobre el mar se oye todo claro; bajo el agua, solo los graves, y más apagado mientras más se baja
     const corte = o.cam > 0.4 ? 16000 : o.cam > 0.02 ? 2500 + 13500 * (o.cam - 0.02) / 0.38 : 520 - 300 * o.prof;
     filtroAgua.frequency.setTargetAtTime(corte, t, 0.25);
-    olasGain.gain.setTargetAtTime(bajoAgua ? 0.15 - 0.09 * o.prof : 0.24, t, 0.4);
+    olasGain.gain.setTargetAtTime(bajoAgua ? 0.35 - 0.2 * o.prof : 0.55, t, 0.4);
     musicaGain.gain.setTargetAtTime(bajoAgua ? 0.22 : 0.16, t, 0.6);
     if (bajoAgua && Math.random() < 0.06) burbuja();
   }, 120);
